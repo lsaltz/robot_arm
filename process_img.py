@@ -5,6 +5,7 @@ from skimage.util import invert
 from skimage.morphology import skeletonize
 from skimage import color, img_as_bool
 import math
+import time
 # Standard Letter Paper size
 PAPER_WIDTH = 8.5
 PAPER_HEIGHT = 11
@@ -117,7 +118,7 @@ def find_index_of_point(contour, point):
             return i
     return -1  # Return -1 if point not found in contour
     
-def send_array(contour, start, end, ppmm):
+def send_array(contour, start, end, ppmm, arduino):
     '''
     This function will send the array over serial to Arudino
     It will start at the "start" index, loop through 
@@ -125,9 +126,6 @@ def send_array(contour, start, end, ppmm):
     Parameters: contour (cv2 contour), start (int), end (int)
     Returns: total number of points "sent"
     '''
-
-    '''Alternate between X and Y values'''
-    print()
     total = 1
     length = len(contour)
     for i in range(length):
@@ -135,18 +133,31 @@ def send_array(contour, start, end, ppmm):
         x = x / ppmm
         y = y / ppmm
         print(f"X: {x:.1f} mm, Y: {y:.1f} mm")
+        arduino.write((str(round(x, 1)) + '\n').encode())
+        time.sleep(1)
+        arduino.write((str(round(y, 1)) + '\n').encode())
+        time.sleep(1)
         total = total + 1
+
     while start != end:
         x, y = contour[(start + i) % length][0]
         x = x / ppmm
         y = y / ppmm
         print(f"X: {x:.1f} mm, Y: {y:.1f} mm")
+        arduino.write((str(round(x, 1)) + '\n').encode())
+        time.sleep(1)
+        arduino.write((str(round(y, 1)) + '\n').encode())
+        time.sleep(1)
         total = total + 1
         start = (start + 1) % length
 
     x, y = contour[(start + i) % length][0]
     x = x / ppmm
     y = y / ppmm
+    arduino.write((str(round(x, 1)) + '\n').encode())
+    time.sleep(1)
+    arduino.write((str(round(y, 1)) + '\n').encode())
+    time.sleep(1)
     print(f"X: {x:.1f} mm, Y: {y:.1f} mm")
 
     return total
@@ -209,7 +220,7 @@ def extract_points(approximations, closest_points, visited):
         end_indices.append(to_index)
     return start_indices, end_indices
 
-def complex_img(image, clarity, ppmm):
+def complex_img(image, clarity, ppmm, arduino):
     '''
     This is the main function that processes a complex image.
     Detailed above. 
@@ -241,7 +252,7 @@ def complex_img(image, clarity, ppmm):
     start_indices, end_indices = extract_points(approximations, closest_points, visited)
     start_indices.append(0)
     for i in range(len(approximations)):  
-        new_total = new_total + send_array(approximations[visited[i]], end_indices[i], start_indices[i], ppmm)    
+        new_total = new_total + send_array(approximations[visited[i]], end_indices[i], start_indices[i], ppmm, arduino)    
 
     for approx in approximations:
         cv2.drawContours(blank, [approx], -1, (0, 255, 0), 1)  # Green color for 
@@ -251,7 +262,7 @@ def complex_img(image, clarity, ppmm):
     plt.show()
 
 
-def simple_img(image, clarity, ppmm):
+def simple_img(image, clarity, ppmm, arduino):
     '''
     This is the main function that processes a simple image.
     Detailed above. 
@@ -291,24 +302,21 @@ def simple_img(image, clarity, ppmm):
     new_total = 0
     start_indices.append(0)
     for i in range(len(approximations)):  
-        new_total = new_total + send_array(approximations[visited[i]], end_indices[i], start_indices[i], ppmm)    
+        new_total = new_total + send_array(approximations[visited[i]], end_indices[i], start_indices[i], ppmm, arduino)    
 
     for approx in approximations:
         cv2.drawContours(blank, [approx], -1, (0, 255, 0), 2)  # Green color for
 
-    print(new_total)
-    plt.imshow(blank)
-    plt.show()
 
-def Process_img(filepath, complexity, clarity=0.01):
+def Process_img(filepath, complexity, arduino, clarity=0.01):
     image = cv2.imread(filepath)
     resize_img = resize_image(image)
     ppmm = get_dimensions(resize_img)
 
     if complexity.lower() == 'complex':
-        complex_img(resize_img, clarity, ppmm)
+        complex_img(resize_img, clarity, ppmm, arduino)
     elif complexity.lower() == 'simple':
-        simple_img(resize_img, clarity, ppmm)
+        simple_img(resize_img, clarity, ppmm, arduino)
     else:
         print("Failed to process")
     

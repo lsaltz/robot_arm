@@ -30,13 +30,13 @@ Description: This programs creates a GUI and serial connection with an
 
 
 # Establishes connection to arduino using PySerial Library with baud rate of 9600
-#arduino = serial.Serial(port='COM3', baudrate=9600,timeout=1)
+arduino = serial.Serial(port='COM3', baudrate=115200,timeout=1)
 
 # Wait for the connection to establish
 time.sleep(2)
 
-FLAG = 'IMG'
-E_FLAG = 'END'
+FLAG = 'IMG\n'
+E_FLAG = 'END\n'
 
 # Constant that contains the accepted G/M code commands
 HELP = '''G00 {X} {Y}: Move at max speed to (x, y) 
@@ -64,35 +64,39 @@ TITLE = ('Comic Sans', 12, 'bold')
 #              and returns 'Fail'
 def check_arguments(command: str) -> str:
     # regular expression
-    g_pattern = r'^G(90|91|20|21)$'
-    m_pattern = r'^M(02|06|72)$'
-    specific_feed = r'G01 \d+ \d+ \d+$'
-    max_feed = r'G00 \d+ \d+$'
+    g_pattern = '^G(90|91|20|21)$'
+    m_pattern = '^M(02|06|72)$'
+    specific_feed = 'G01 \d+ \d+ \d+$'
+    max_feed = 'G00 \d+ \d+$'
 
     # Test if each regex matchs
     if re.match(g_pattern, command):
         print(f'Sending g code command {command}')
-        # arduino.write(command.encode())
+        arduino.write((command + '\n').encode())
     elif re.match(m_pattern, command):
         print(f'Sending m code command {command}')
-        # arduino.write(command.encode())
+        arduino.write((command + '\n').encode())
     elif re.match(specific_feed, command):
         # print(f'Sending G01 command {command}')
         pieces = command.split()
-        print(f'Sending G00 command {command}')
+        #print(f'Sending G00 command {command}')
         for piece in pieces:
             print(piece)
-        # arduino.write(command.encode())
+            arduino.write((piece + '\n').encode())
     elif re.match(max_feed, command):
         pieces = command.split()
+        
         # print(f'Sending G00 command {command}')
         for piece in pieces:
-            print(piece)
-            # arduino.write(piece.encode())
+            
+            
+            arduino.write((piece + '\n').encode())
     else:
         # if none match tell user that command is invalid and return 'Fail'
         sg.popup(f'''{command} doesn\'t match the accepted patterns.\nPlease click help to see the list of commands.''')
         return 'Fail'
+    arduino.flush()
+    print(arduino.readline().decode())
     # return 'Pass' if 'else' statement isn't reached
     return 'Pass'
 
@@ -156,7 +160,7 @@ def main():
         # If 'X' or M02 events are entered, send update to Arduino, and break loop
         if event == sg.WINDOW_CLOSED or values['-GCODE-'] == 'M02':
             print("Quitting")
-            # arduino.write('M02'.encode())
+            arduino.write('M02'.encode())
             time.sleep(1)
             break
 
@@ -195,16 +199,18 @@ def main():
             elif complexity == 'No':
                 complexity = 'Complex'
                    
-            # arduino.write(FLAG.encode())
+            arduino.write(FLAG.encode())
             # send coordinates in here
-            process_img.Process_img(filepath, complexity)
-            # arduino.write(E_FLAG.encode())
+            process_img.Process_img(filepath, complexity, arduino)
+            
+            arduino.write(E_FLAG.encode())
+            
 
 
 
     # If loop is broken close arduino serial connection and GUI window 
     print('Closing serial')
-    # arduino.close()
+    arduino.close()
     window.close()  
 
 # Run main function
