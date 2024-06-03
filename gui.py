@@ -30,7 +30,7 @@ Description: This programs creates a GUI and serial connection with an
 
 
 # Establishes connection to arduino using PySerial Library with baud rate of 9600
-arduino = serial.Serial(port='COM3', baudrate=115200,timeout=1)
+arduino = serial.Serial(port='COM3', baudrate=115200,timeout=.1)
 
 # Wait for the connection to establish
 time.sleep(2)
@@ -73,30 +73,30 @@ def check_arguments(command: str) -> str:
     if re.match(g_pattern, command):
         print(f'Sending g code command {command}')
         arduino.write((command + '\n').encode())
+
     elif re.match(m_pattern, command):
         print(f'Sending m code command {command}')
+       
         arduino.write((command + '\n').encode())
+
     elif re.match(specific_feed, command):
         # print(f'Sending G01 command {command}')
         pieces = command.split()
         #print(f'Sending G00 command {command}')
         for piece in pieces:
-            print(piece)
             arduino.write((piece + '\n').encode())
     elif re.match(max_feed, command):
         pieces = command.split()
         
         # print(f'Sending G00 command {command}')
         for piece in pieces:
-            
-            
+            print(arduino.readline().decode())
+          
             arduino.write((piece + '\n').encode())
     else:
         # if none match tell user that command is invalid and return 'Fail'
         sg.popup(f'''{command} doesn\'t match the accepted patterns.\nPlease click help to see the list of commands.''')
         return 'Fail'
-    arduino.flush()
-    print(arduino.readline().decode())
     # return 'Pass' if 'else' statement isn't reached
     return 'Pass'
 
@@ -177,7 +177,7 @@ def main():
             # If command passed tests
             # if check == 'Pass':
                 # Read and print message from Arduino
-                # msg = arduino.readline().decode()
+                # msg = arduino.readline().decodee().decode()
                 # print(f'Recieved: {msg}')
 
         # If help button is clicked call function to open help window
@@ -198,12 +198,13 @@ def main():
                 complexity = 'Simple'
             elif complexity == 'No':
                 complexity = 'Complex'
-                   
-            arduino.write(FLAG.encode())
+            arduino.write(FLAG.encode())      
+            
             # send coordinates in here
             process_img.Process_img(filepath, complexity, arduino)
             
             arduino.write(E_FLAG.encode())
+              
             
 
 

@@ -117,7 +117,7 @@ def find_index_of_point(contour, point):
         if (contour_point[0] == point).all():
             return i
     return -1  # Return -1 if point not found in contour
-    
+
 def send_array(contour, start, end, ppmm, arduino):
     '''
     This function will send the array over serial to Arudino
@@ -134,10 +134,14 @@ def send_array(contour, start, end, ppmm, arduino):
         y = y / ppmm
         print(f"X: {x:.1f} mm, Y: {y:.1f} mm")
         arduino.write((str(round(x, 1)) + '\n').encode())
-        time.sleep(1)
+        time.sleep(0.1)   
+        
+        
         arduino.write((str(round(y, 1)) + '\n').encode())
-        time.sleep(1)
+
+        time.sleep(1)   
         total = total + 1
+        
 
     while start != end:
         x, y = contour[(start + i) % length][0]
@@ -145,9 +149,10 @@ def send_array(contour, start, end, ppmm, arduino):
         y = y / ppmm
         print(f"X: {x:.1f} mm, Y: {y:.1f} mm")
         arduino.write((str(round(x, 1)) + '\n').encode())
-        time.sleep(1)
+        time.sleep(0.1)   
+
         arduino.write((str(round(y, 1)) + '\n').encode())
-        time.sleep(1)
+        time.sleep(1)   
         total = total + 1
         start = (start + 1) % length
 
@@ -155,9 +160,10 @@ def send_array(contour, start, end, ppmm, arduino):
     x = x / ppmm
     y = y / ppmm
     arduino.write((str(round(x, 1)) + '\n').encode())
-    time.sleep(1)
+    time.sleep(0.1)
+
     arduino.write((str(round(y, 1)) + '\n').encode())
-    time.sleep(1)
+    time.sleep(1)   
     print(f"X: {x:.1f} mm, Y: {y:.1f} mm")
 
     return total
@@ -308,7 +314,7 @@ def simple_img(image, clarity, ppmm, arduino):
         cv2.drawContours(blank, [approx], -1, (0, 255, 0), 2)  # Green color for
 
 
-def Process_img(filepath, complexity, arduino, clarity=0.01):
+def Process_img(filepath, complexity, arduino, clarity=0.03):
     image = cv2.imread(filepath)
     resize_img = resize_image(image)
     ppmm = get_dimensions(resize_img)
