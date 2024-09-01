@@ -29,7 +29,7 @@ Description: This programs creates a GUI and serial connection with an
 '''
 
 
-# Establishes connection to arduino using PySerial Library with baud rate of 9600
+# Establishes connection to arduino using PySerial Library with baud rate of 115200
 arduino = serial.Serial(port='COM3', baudrate=115200,timeout=.1)
 
 # Wait for the connection to establish
@@ -90,7 +90,7 @@ def check_arguments(command: str) -> str:
         
         # print(f'Sending G00 command {command}')
         for piece in pieces:
-            print(arduino.readline().decode())
+            #print(arduino.readline().decode())
           
             arduino.write((piece + '\n').encode())
     else:

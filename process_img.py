@@ -6,6 +6,7 @@ from skimage.morphology import skeletonize
 from skimage import color, img_as_bool
 import math
 import time
+import serial
 # Standard Letter Paper size
 PAPER_WIDTH = 8.5
 PAPER_HEIGHT = 11
@@ -118,6 +119,12 @@ def find_index_of_point(contour, point):
             return i
     return -1  # Return -1 if point not found in contour
 
+def send_receive_ack(arduino):
+    '''
+    Sends and receives acknowledgement that points were received by arduino.
+    '''
+    while arduino.readline().decode() != "ACK\n":
+        time.sleep(0.5)   
 def send_array(contour, start, end, ppmm, arduino):
     '''
     This function will send the array over serial to Arudino
@@ -134,14 +141,11 @@ def send_array(contour, start, end, ppmm, arduino):
         y = y / ppmm
         print(f"X: {x:.1f} mm, Y: {y:.1f} mm")
         arduino.write((str(round(x, 1)) + '\n').encode())
-        time.sleep(0.1)   
-        
-        
+        time.sleep(0.5)   
         arduino.write((str(round(y, 1)) + '\n').encode())
-
-        time.sleep(1)   
+        send_receive_ack(arduino)
+        time.sleep(0.5)   
         total = total + 1
-        
 
     while start != end:
         x, y = contour[(start + i) % length][0]
@@ -149,23 +153,20 @@ def send_array(contour, start, end, ppmm, arduino):
         y = y / ppmm
         print(f"X: {x:.1f} mm, Y: {y:.1f} mm")
         arduino.write((str(round(x, 1)) + '\n').encode())
-        time.sleep(0.1)   
-
+        time.sleep(0.5)   
         arduino.write((str(round(y, 1)) + '\n').encode())
-        time.sleep(1)   
+        send_receive_ack(arduino)  
         total = total + 1
         start = (start + 1) % length
-
     x, y = contour[(start + i) % length][0]
     x = x / ppmm
     y = y / ppmm
     arduino.write((str(round(x, 1)) + '\n').encode())
-    time.sleep(0.1)
+    time.sleep(0.5)
 
     arduino.write((str(round(y, 1)) + '\n').encode())
-    time.sleep(1)   
+    send_receive_ack(arduino) 
     print(f"X: {x:.1f} mm, Y: {y:.1f} mm")
-
     return total
 
 def contour_closeness(approximations):
@@ -314,7 +315,7 @@ def simple_img(image, clarity, ppmm, arduino):
         cv2.drawContours(blank, [approx], -1, (0, 255, 0), 2)  # Green color for
 
 
-def Process_img(filepath, complexity, arduino, clarity=0.03):
+def Process_img(filepath, complexity, arduino, clarity=0.005):
     image = cv2.imread(filepath)
     resize_img = resize_image(image)
     ppmm = get_dimensions(resize_img)
@@ -328,8 +329,8 @@ def Process_img(filepath, complexity, arduino, clarity=0.03):
     
 '''Test Cases'''
 
-flower_path = "C:\\Users\\reubs\\mitpractice\\jrdesign\\flower.jpg"
-logo_path = "C:\\Users\\reubs\\mitpractice\\jrdesign\\logo.png"
+# flower_path = "C:\\Users\\reubs\\mitpractice\\jrdesign\\flower.jpg"
+# logo_path = "C:\\Users\\reubs\\mitpractice\\jrdesign\\logo.png"
 
 # image_flower = cv2.imread(flower_path)
 # # image_logo = cv2.imread(logo_path)
